@@ -2,7 +2,7 @@ import json
 import time
 from kafka import KafkaProducer
 
-KAFKA_BROKER = "host.docker.internal:29092, host.docker.internal:29093, host.docker.internal:29094"  # Von deinem Host aus
+KAFKA_BROKER = ["localhost:9093", "localhost:9094"]  # Von deinem Host aus
 
 with open("track.json") as f:
     tracks = json.load(f)["tracks"]
@@ -44,7 +44,7 @@ token = {
     "start_time": time.time()
 }
 
-producer = KafkaProducer(bootstrap_servers=[KAFKA_BROKER])
+producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER)
 # Sende das Token an den Kafka-Topic des start-goal Segments
 producer.send(start_segment["segmentId"], json.dumps(token).encode('utf-8'))
 producer.flush()

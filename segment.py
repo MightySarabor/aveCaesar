@@ -8,13 +8,16 @@ SEGMENT_ID = os.environ.get("SEGMENT_ID", "unknown")
 SEGMENT_TYPE = os.environ.get("SEGMENT_TYPE", "normal")  # "start-goal" oder "normal"
 TRACK_ID = os.environ.get("TRACK_ID", "unknown")
 NEXT_SEGMENT = os.environ.get("NEXT_SEGMENT")  # Erwartet die Segment-ID des nächsten Feldes
-KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "kafka:9092")
+kafka_broker_str = os.environ.get("KAFKA_BROKER", "kafka-1:19092,kafka-2:19093,kafka-3:19094")
+
+# Wandle den String in eine Liste um, wobei führende und nachfolgende Leerzeichen entfernt werden.
+KAFKA_BROKERS = [broker.strip() for broker in kafka_broker_str.split(",") if broker.strip()]
 
 # Kafka-Producer und Consumer initialisieren
 producer = KafkaProducer(bootstrap_servers=[KAFKA_BROKER])
 consumer = KafkaConsumer(
     SEGMENT_ID,
-    bootstrap_servers=[KAFKA_BROKER],
+    bootstrap_servers=KAFKA_BROKER,
     auto_offset_reset='earliest',
     group_id=SEGMENT_ID
 )
