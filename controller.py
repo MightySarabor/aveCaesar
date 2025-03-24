@@ -2,7 +2,7 @@ import json
 import time
 from kafka import KafkaProducer
 
-KAFKA_BROKER = "localhost:9093"  # Von deinem Host aus
+KAFKA_BROKER = "localhost:9093,localhost:9094,localhost:9095"  # Von deinem Host aus
 
 with open("track.json") as f:
     tracks = json.load(f)["tracks"]
