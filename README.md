@@ -140,13 +140,10 @@ Folgender Code kann als weiterer Service hinzugefügt werden in der docker-compo
 ```
 # AveCaesar – Aufgabe 3: Schikanen & Hindernisse
 
-**Überblick:**  
-AveCaesar realisiert ein spielbrettartiges Rennevent mit Docker-Containern, wobei jedes Spielfeld (Segment) einen eigenen Event-Handler darstellt. Die Kommunikation zwischen den Segmenten und dem zentralen Controller erfolgt über Kafka.
-
 **Neue Logik – Hindernisse und Schikanen:**  
 - **Hindernisse:**  
   Wenn ein Reiter (Token) in einem Segment ankommt, prüft der Container, ob das Zielsegment (z. B. NEXT_SEGMENT oder ein alternatives, sichtbar definiertes Segment) frei ist.  
-  - Ist das Ziel bereits belegt (Engpass voll), wird der Status des aktuellen Segments auf **GGGwaitingGGG** gesetzt.  
+  - Ist das Ziel bereits belegt (Engpass voll), wird der Status des aktuellen Segments auf waiting gesetzt.  
   - Das Token „schindet“ sich im aktuellen Segment ab, bis der Engpass gelöst ist und ein Ziel wieder frei ist.
 
 - **Versuch, nach innen zu reiten:**  
@@ -154,7 +151,7 @@ AveCaesar realisiert ein spielbrettartiges Rennevent mit Docker-Containern, wobe
   - Dieser Versuch wird klar als Regel implementiert, wobei der Container – sollte der innere Bereich bereits belegt sein – das Token ebenfalls warten lässt.
 
 - **Weiterleitung und Statusänderungen:**  
-  - Erreicht ein Token ein freies Zielsegment, wird es dorthin weitergeleitet und der Status des abgebenden Segments wechselt von **GGGwaitingGGG** bzw. **GGGoccupiedGGG** zu **GGGfreeGGG**.  
+  - Erreicht ein Token ein freies Zielsegment, wird es dorthin weitergeleitet und der Status des abgebenden Segments wechselt von **waiting** bzw. **occupied** zu **free**.  
   - Alle Statusänderungen (occupied, waiting, free) werden zentral im Kafka-Topic veröffentlicht, sodass der Controller jederzeit den aktuellen Zustand verfolgen kann.
 
 **Controller:**  
