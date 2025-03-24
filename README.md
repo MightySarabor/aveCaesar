@@ -138,6 +138,31 @@ Folgender Code kann als weiterer Service hinzugefügt werden in der docker-compo
     depends_on:
       - zookeeper
 ```
+# AveCaesar – Aufgabe 3: Schikanen & Hindernisse
+
+**Überblick:**  
+AveCaesar realisiert ein spielbrettartiges Rennevent mit Docker-Containern, wobei jedes Spielfeld (Segment) einen eigenen Event-Handler darstellt. Die Kommunikation zwischen den Segmenten und dem zentralen Controller erfolgt über Kafka.
+
+**Neue Logik – Hindernisse und Schikanen:**  
+- **Hindernisse:**  
+  Wenn ein Reiter (Token) in einem Segment ankommt, prüft der Container, ob das Zielsegment (z. B. NEXT_SEGMENT oder ein alternatives, sichtbar definiertes Segment) frei ist.  
+  - Ist das Ziel bereits belegt (Engpass voll), wird der Status des aktuellen Segments auf **GGGwaitingGGG** gesetzt.  
+  - Das Token „schindet“ sich im aktuellen Segment ab, bis der Engpass gelöst ist und ein Ziel wieder frei ist.
+
+- **Versuch, nach innen zu reiten:**  
+  Die Reiter versuchen auch, in den inneren Teil des Kurses zu wechseln, was aktuell aber noch keinen echten Vorteil bietet.  
+  - Dieser Versuch wird klar als Regel implementiert, wobei der Container – sollte der innere Bereich bereits belegt sein – das Token ebenfalls warten lässt.
+
+- **Weiterleitung und Statusänderungen:**  
+  - Erreicht ein Token ein freies Zielsegment, wird es dorthin weitergeleitet und der Status des abgebenden Segments wechselt von **GGGwaitingGGG** bzw. **GGGoccupiedGGG** zu **GGGfreeGGG**.  
+  - Alle Statusänderungen (occupied, waiting, free) werden zentral im Kafka-Topic veröffentlicht, sodass der Controller jederzeit den aktuellen Zustand verfolgen kann.
+
+**Controller:**  
+Der Controller abonniert alle Kafka-Topics und gibt alle 2 Sekunden eine kompakte Statuszeile aus – er meldet:
+- **Spurwechsel:** Sobald ein Token seinen Track wechselt, wird dies kurz angezeigt.
+- **Warten:** Wenn ein Segment meldet, dass ein Token aufgrund eines Engpasses warten muss, wird diese Nachricht als Hinweis ausgegeben.
+
+Diese vereinfachte Logik sorgt dafür, dass du während des Rennens stets einen schnellen Überblick darüber hast, ob Reiter blockiert sind oder ihren Kurs (Spur) ändern – und wie sich das Rennen dynamisch entwickelt.
 
 
 
