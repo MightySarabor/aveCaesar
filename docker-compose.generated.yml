@@ -2,7 +2,7 @@ services:
   track1_segment-1-1:
     environment:
       KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-1-2
+      NEXT_SEGMENT: segment-2-2
       SEGMENT_ID: segment-1-1
       SEGMENT_TYPE: normal
       TRACK_ID: '1'
@@ -13,51 +13,15 @@ services:
       KAFKA_BROKER: kafka:9092
       NEXT_SEGMENT: segment-1-3
       SEGMENT_ID: segment-1-2
-      SEGMENT_TYPE: normal
+      SEGMENT_TYPE: blocked
       TRACK_ID: '1'
     image: segment-image
     restart: always
   track1_segment-1-3:
     environment:
       KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-1-4
-      SEGMENT_ID: segment-1-3
-      SEGMENT_TYPE: normal
-      TRACK_ID: '1'
-    image: segment-image
-    restart: always
-  track1_segment-1-4:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-2-5
-      SEGMENT_ID: segment-1-4
-      SEGMENT_TYPE: normal
-      TRACK_ID: '1'
-    image: segment-image
-    restart: always
-  track1_segment-1-5:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-1-6
-      SEGMENT_ID: segment-1-5
-      SEGMENT_TYPE: blocked
-      TRACK_ID: '1'
-    image: segment-image
-    restart: always
-  track1_segment-1-6:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-1-7
-      SEGMENT_ID: segment-1-6
-      SEGMENT_TYPE: normal
-      TRACK_ID: '1'
-    image: segment-image
-    restart: always
-  track1_segment-1-7:
-    environment:
-      KAFKA_BROKER: kafka:9092
       NEXT_SEGMENT: start-and-goal-1
-      SEGMENT_ID: segment-1-7
+      SEGMENT_ID: segment-1-3
       SEGMENT_TYPE: normal
       TRACK_ID: '1'
     image: segment-image
@@ -74,7 +38,7 @@ services:
   track2_segment-2-1:
     environment:
       KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-1-2
+      NEXT_SEGMENT: segment-2-2
       SEGMENT_ID: segment-2-1
       SEGMENT_TYPE: normal
       TRACK_ID: '2'
@@ -85,52 +49,16 @@ services:
       KAFKA_BROKER: kafka:9092
       NEXT_SEGMENT: segment-1-3
       SEGMENT_ID: segment-2-2
-      SEGMENT_TYPE: blocked
+      SEGMENT_TYPE: normal
       TRACK_ID: '2'
     image: segment-image
     restart: always
   track2_segment-2-3:
     environment:
       KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-2-4
+      NEXT_SEGMENT: start-and-goal-2
       SEGMENT_ID: segment-2-3
       SEGMENT_TYPE: blocked
-      TRACK_ID: '2'
-    image: segment-image
-    restart: always
-  track2_segment-2-4:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-2-5
-      SEGMENT_ID: segment-2-4
-      SEGMENT_TYPE: normal
-      TRACK_ID: '2'
-    image: segment-image
-    restart: always
-  track2_segment-2-5:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-2-6
-      SEGMENT_ID: segment-2-5
-      SEGMENT_TYPE: normal
-      TRACK_ID: '2'
-    image: segment-image
-    restart: always
-  track2_segment-2-6:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-2-7
-      SEGMENT_ID: segment-2-6
-      SEGMENT_TYPE: normal
-      TRACK_ID: '2'
-    image: segment-image
-    restart: always
-  track2_segment-2-7:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: start-and-goal-2
-      SEGMENT_ID: segment-2-7
-      SEGMENT_TYPE: normal
       TRACK_ID: '2'
     image: segment-image
     restart: always
@@ -141,78 +69,6 @@ services:
       SEGMENT_ID: start-and-goal-2
       SEGMENT_TYPE: start-goal
       TRACK_ID: '2'
-    image: segment-image
-    restart: always
-  track3_segment-3-1:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-2
-      SEGMENT_ID: segment-3-1
-      SEGMENT_TYPE: normal
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_segment-3-2:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-3
-      SEGMENT_ID: segment-3-2
-      SEGMENT_TYPE: blocked
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_segment-3-3:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-4
-      SEGMENT_ID: segment-3-3
-      SEGMENT_TYPE: normal
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_segment-3-4:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-5
-      SEGMENT_ID: segment-3-4
-      SEGMENT_TYPE: normal
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_segment-3-5:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-6
-      SEGMENT_ID: segment-3-5
-      SEGMENT_TYPE: normal
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_segment-3-6:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-7
-      SEGMENT_ID: segment-3-6
-      SEGMENT_TYPE: normal
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_segment-3-7:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: start-and-goal-3
-      SEGMENT_ID: segment-3-7
-      SEGMENT_TYPE: normal
-      TRACK_ID: '3'
-    image: segment-image
-    restart: always
-  track3_start-and-goal-3:
-    environment:
-      KAFKA_BROKER: kafka:9092
-      NEXT_SEGMENT: segment-3-1
-      SEGMENT_ID: start-and-goal-3
-      SEGMENT_TYPE: start-goal
-      TRACK_ID: '3'
     image: segment-image
     restart: always
 version: '3'

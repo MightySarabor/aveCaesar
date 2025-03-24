@@ -78,13 +78,11 @@ for track in tracks:
 
 print("\nAlle Tokens gestartet. Rennen beginnt...\n")
 
-# Wir möchten alle 3 Sekunden den aktuellen Status anzeigen.
-# Darin soll nur bei Trackwechsel eine zusätzliche Meldung erscheinen.
-# Dazu speichern wir den aktuellen Status jedes Tokens:
+# Wir speichern den Status jedes Tokens:
 # token_status = { token_name: {"segment": <Segment-ID>, "track": <Track-Nummer>, "last_update": <Timestamp>} }
 token_status = {}
 
-# Kafka-Consumer initialisieren; wir abonnieren ALLE Topics.
+# Controller-Consumer initialisieren; er abonnierte ALLE Topics.
 consumer = KafkaConsumer(
     bootstrap_servers=KAFKA_BROKER,
     auto_offset_reset="latest",  # nur zukünftige Nachrichten
@@ -95,8 +93,11 @@ consumer.subscribe(pattern=".*")
 
 # Umrechnungsfaktor: 1 Sekunde entspricht 42 Sandkörnern (zum Augenzwinkern)
 SAND_KOERNER_FACTOR = 42
-last_print = time.time()
 PRINT_INTERVAL = 3  # Ausgabe alle 3 Sekunden
+last_print = time.time()
+
+# Für Überholen-Erkennung merken wir uns die bisherige Reihenfolge der Tokens.
+prev_order = []
 
 winner = None
 
@@ -106,27 +107,40 @@ while True:
         for message in messages:
             try:
                 updated_token = json.loads(message.value.decode("utf-8"))
-            except Exception as e:
+            except Exception:
+                # Wenn keine gültige JSON, überspringen wir
                 continue
+
+            # Falls es sich um ein Statusupdate handelt:
+            if "status" in updated_token:
+                seg_id = updated_token.get("segment_id", "unbekannt")
+                status = updated_token.get("status")
+                print(f"[Controller] Statusupdate von Segment '{seg_id}': {status}")
+                if status == "waiting":
+                    print(f"[Controller] Achtung: In Segment '{seg_id}' muss ein Reiter warten!")
+                continue
+
             tname = updated_token.get("token_name")
             if tname not in tokens:
                 continue
-            # Bestimme das aktuelle Segment anhand des Topics
+
+            # Bestimme das aktuelle Segment anhand des Topics, von dem die Nachricht kam.
             new_segment = message.topic
             new_track = extract_track(new_segment)
             current_time = time.time()
-            # Prüfe, ob wir bereits einen Status für diesen Token haben.
+
+            # Prüfe, ob bereits ein Status für diesen Token vorliegt.
             if tname in token_status:
                 prev = token_status[tname]
                 prev_track = prev.get("track")
                 if new_track is not None and prev_track is not None and new_track != prev_track:
-                    # Spezielle Ausgabe bei Trackwechsel:
                     print(f"*** Reiter '{tname}' wechselt Track: Von Track {prev_track} (Segment '{prev['segment']}') nach Track {new_track} (Segment '{new_segment}'). ***")
             else:
                 # Erste Statusmeldung für diesen Token
                 print(f"Reiter '{tname}' ist gestartet in Segment '{new_segment}'.")
-            # Aktualisiere den Status
+            # Update des Token-Status.
             token_status[tname] = {"segment": new_segment, "track": new_track, "last_update": current_time}
+
             # Überprüfe, ob dieser Token fertig ist:
             if "finish_time" in updated_token:
                 winner = updated_token
@@ -135,18 +149,33 @@ while True:
             break
     if winner:
         break
-    # Alle 3 Sekunden: Normale Statusausgabe (ohne Trackwechsel-Hervorhebung)
+
+    # Alle 3 Sekunden: Ausgabe des aktuellen Gesamtstatus inkl. Überholen-Erkennung.
     if time.time() - last_print >= PRINT_INTERVAL:
         print("\n--- Aktueller Gesamtstatus ---")
         for tname, status in token_status.items():
             print(f"Reiter '{tname}' in Segment '{status['segment']}' (Track {status['track']})")
+        
+        # Berechne die aktuelle Reihenfolge basierend auf "track" (niedriger = weiter vorne).
+        # Falls gleiche Track-Nummer, dient der letzte Zeitstempel als Tiebreaker.
+        current_order = sorted(token_status.keys(), key=lambda t: (token_status[t]["track"], token_status[t]["last_update"]))
+        print("Aktuelle Reihenfolge (basierend auf Track/Nach Update):", current_order)
+        if prev_order and prev_order != current_order:
+            # Vergleiche alte und neue Reihenfolge und melde Überholungen.
+            for token in current_order:
+                if token in prev_order:
+                    old_index = prev_order.index(token)
+                    new_index = current_order.index(token)
+                    if new_index < old_index:
+                        print(f"[Controller] ÜBERHOLUNG: Reiter '{token}' hat sich von Position {old_index+1} auf {new_index+1} vorgearbeitet!")
         print("------------------------------\n")
         last_print = time.time()
+        prev_order = current_order.copy()
+        
+    time.sleep(1)
 
-# Sobald ein Token fertig ist, wird das Rennen beendet.
 finish_time = winner["finish_time"]
 start_time = winner["start_time"]
 elapsed = finish_time - start_time
 sandkoerner = int(elapsed * SAND_KOERNER_FACTOR)
-print(f"\nRennen beendet! Sieger: '{winner['token_name']}' hat das Rennen in ca. {sandkoerner} Sandkörnern "
-      f"(entspricht {elapsed:.2f} Sekunden) beendet.")
+print(f"\nRennen beendet! Sieger: '{winner['token_name']}' hat das Rennen in ca. {sandkoerner} Sandkörnern (entspricht {elapsed:.2f} Sekunden) beendet.")
