@@ -35,6 +35,30 @@ AveCaesar ist ein dynamisches System, das ein spielbrettartiges Rennevent mithil
 3. **Event-Handling mit Kafka:**  
    - Alle Segment-Container kommunizieren über Kafka. Jeder Container abonniert ein Topic, das seiner Segment-ID entspricht.
    - Die Infrastruktur wird mittels Docker Compose gestartet, wobei zusätzlich Kafka und Zookeeper als zentrale Services laufen.
+   - Hier war der kniffligste Teil die Ports richtig zu setzen. Es muss unterschieden werden zwischen Host Mascheine zu Container und Container zu Container (im gleichen Netzwerk) bei mir mit Inside und Outside gekennzeichnet. Um mit der Hostmaschine auf Kafka zuzugreifen ist Portforwarding wichtig.
+```bash
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_BROKER_ID: 1
+    depends_on:
+      - zookeeper
+```
 
 4. **Race Controller:**  
    - **`controller.py`**: Startet das Rennen, indem der Nutzer einen Track auswählt und einen Token (z. B. den Namen eines Pferdes) initialisiert. Der Token wird in das Kafka-Topic des Startsegments eingespeist und wandert so durch das Spielbrett.
@@ -43,13 +67,15 @@ AveCaesar ist ein dynamisches System, das ein spielbrettartiges Rennevent mithil
 
 ## Setup und Ausführung
 
-### Voraussetzungen
-
-- **Docker & Docker Compose:** Für den Containerbetrieb und die Orchestrierung.
-- **Python 3.9+**: Zum Ausführen der Skripte.
-
 ### Schritte
 
+0. **Docker-Image bauen (wichtig!):**  
+   **Achtung:** Falls Änderungen an `segment.py` vorgenommen wurden, ist es notwendig, das Docker-Image neu zu bauen. Andernfalls werden alte Versionen des Codes genutzt – wie ich selbst schmerzlich erfahren habe.  
+   
+   ```bash
+   docker build -t segment-image .
+   ```
+   
 1. **Track generieren:**  
    Erstelle mit `circular_course.py` die JSON-Beschreibung des Spielbretts.  
    Beispiel:
@@ -94,31 +120,9 @@ AveCaesar ist ein dynamisches System, das ein spielbrettartiges Rennevent mithil
 
 Um den einzelnen Kafka-Broker in einen Cluster zu verwandeln, wurden der Docker Compose-Konfiguration zwei weitere Broker hinzugefügt. Der ursprüngliche Broker bleibt unverändert, um den bestehenden Code nicht anzupassen. Die zusätzlichen Broker (kafka-broker-2 und kafka-broker-3) sind analog zum ersten konfiguriert – mit jeweils eigener Broker-ID, separaten Ports und individuellen Listener-Einstellungen. Dadurch entsteht ein einfacher Kafka-Cluster, der über Zookeeper koordiniert wird und für höhere Verfügbarkeit sowie bessere Lastverteilung sorgt.
 
-Die erweiterte docker-compose.yml-Konfiguration lautet:
+Folgender Code kann als weiterer Service hinzugefügt werden in der docker-compose.yml. Es muss ID, die Ports und der Name des Containers geändert werden. 
 
 ```
-services:
-  zookeeper:
-    image: wurstmeister/zookeeper
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: wurstmeister/kafka
-    container_name: kafka
-    ports:
-      - "9093:9093"
-    environment:
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_BROKER_ID: 1
-    depends_on:
-      - zookeeper
-
   kafka-broker-2:
     image: wurstmeister/kafka
     container_name: kafka-broker-2
@@ -133,24 +137,9 @@ services:
       KAFKA_BROKER_ID: 2
     depends_on:
       - zookeeper
-
-  kafka-broker-3:
-    image: wurstmeister/kafka
-    container_name: kafka-broker-3
-    ports:
-      - "9095:9095"
-    environment:
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:29092,OUTSIDE://0.0.0.0:9095
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka-broker-3:29092,OUTSIDE://localhost:9095
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_BROKER_ID: 3
-    depends_on:
-      - zookeeper
 ```
 
-Mit dieser Konfiguration gehört der Kafka-Cluster nun zu drei Brokern. Jede Instanz ist über Zookeeper verbunden und kommuniziert intern über dedizierte INSIDE-Listener (auf Ports 9092, 19092 und 29092) sowie extern über die OUTSIDE-Listener (auf Ports 9093, 9094 und 9095). Dadurch kann die Anwendung Nachrichten über mehrere Broker verteilen, was die Fehlertoleranz und Skalierbarkeit des Systems verbessert.
+
 
 
 
